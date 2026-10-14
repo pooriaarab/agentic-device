@@ -1,108 +1,34 @@
-# Agentic scaffold
+# agentic-device
 
-Control your own iPhones for posting via WebDriverAgent and ESP32 HID.
+`agentic-device` is a TypeScript library, CLI, and MCP server for assisting with **devices you own and control**. It supports setup-oriented UI actions and creates auditable phone-posting tasks; it does not bypass passcodes, CAPTCHAs, or verification codes.
 
-Clone this repo to start a new pack. It gives one core with three
-faces: a terminal command, an npm import, and an MCP server.
+## Safety
 
-## What you get
+- Register only your own iPhones by UDID.
+- `device action` is dry-run by default; add `--execute` only after review.
+- `humanCheckpoint` always pauses with `needs-human`, including for CAPTCHA, passcode, and verification-code steps.
+- Drivers surface failures as `VendorError`; they never claim failed hardware/network work succeeded.
 
-- One core: brand config, logs, guards, routing, dry run, cost reports.
-- Three faces over that core: CLI, library, MCP server.
-- A frozen core contract, so packs share one API.
-- A worker entry and a wrangler sample for edge deploys.
-- Build, typecheck, and tests that pass from a fresh clone.
-
-## Quick start
+## CLI
 
 ```sh
-git clone https://github.com/pooriaarab/agentic-device.git my-pack
-cd my-pack
-npm install
-npm run build
-npm run typecheck
-npm test
+agentic-device device register --udid MY_PHONE --label "My iPhone" --connection simulator
+agentic-device device list
+agentic-device device action --udid MY_PHONE --action '{"type":"home"}'
+agentic-device device post-task --udid MY_PHONE --platform example --text "Hello"
+agentic-device device queue
+agentic-device mcp
 ```
 
-Run the command:
+## Library
 
-```sh
-node dist/cli.js summary --text "hello world hello"
+```ts
+import { DeviceRegistry, SimulatorDriver, runAction } from "agentic-device";
+const registry = new DeviceRegistry();
+const phone = registry.register({ udid: "mine", label: "My iPhone", connectionType: "simulator" });
+await runAction(phone, new SimulatorDriver(), { type: "home" }); // dry run by default
 ```
 
-Call the library:
+## Upstream bases
 
-```js
-import { summarizeText } from "./dist/index.js";
-
-console.log(summarizeText("hello world hello"));
-```
-
-Start the MCP server:
-
-```sh
-node dist/cli.js mcp
-```
-
-## Three usecases
-
-1. You run one text summary from the terminal.
-2. You import the summary function in a script.
-3. You let an agent call the same function as an MCP tool.
-
-## Clone checklist
-
-This repo is a template. Replace each slot in each file that holds it.
-
-- `agentic-device`: the directory name, like `my-pack`.
-- `agentic-device`: the npm name, like `agentic-<block>` (bare name, never @pooriaarab/ scoped unless the brief says scoped).
-- `agentic-device`: the terminal command, like `my-pack`.
-- `Control your own iPhones for posting via WebDriverAgent and ESP32 HID.`: one plain sentence, under 100 chars.
-- `iphone,esp32,webdriveragent,device,agentic-suite,cli,mcp`: plain keywords, like `notes, search, cli`.
-- `pooriaarab`: the repo owner, like `pooriaarab`.
-
-Slot files: `AGENTS.md`, `SKILL.md`, `RULES.md`, `llms.txt`,
-`server.json`, `.mcp.json`, `wrangler.jsonc`.
-
-Then rename the scaffold identity itself:
-
-- `package.json`: name, bin commands, mcpName. Remove `"private": true`.
-- `src/index.ts`: the `DEFAULT_BRAND` fields.
-- This file: the pitch and the examples above.
-
-At publish time, set `server.json` version to the npm version and
-`server.json` repository id from `gh api repos/OWNER/REPO --jq .id`.
-
-## Gates
-
-Run all three before you push a pack:
-
-```sh
-npm run build && npm run typecheck && npm test
-```
-
-Then run the real installed CLI once from a tarball:
-
-```sh
-npm pack
-npx --yes --package ./pooriaarab-agentic-device-0.1.0.tgz agentic-pack summary --text "hello"
-```
-
-## Release flow
-
-Push to `main` for review. Merge to `release` to publish. The
-publish workflow ships only when the version is new.
-
-## Layout
-
-- `src/index.ts`: the library face.
-- `src/cli.ts`: the terminal face.
-- `src/mcp.ts`: the MCP server. `src/mcp-bin.ts` starts it.
-- `src/worker.ts`: the edge worker face.
-- `src/core.ts`: the shared core.
-- `agentic-core.d.ts`: the frozen contract.
-- `docs/agentic-core.md`: the contract in plain words.
-
-## License
-
-MIT. See `LICENSE`.
+The WDA driver is based on the protocol exposed by [appium/WebDriverAgent](https://github.com/appium/WebDriverAgent). ESP32 HID integrations are designed around [ESP32-BLE-Keyboard](https://github.com/T-vK/ESP32-BLE-Keyboard). Production task workflow concepts acknowledge [prod-farm-ios-core](https://github.com/). These integrations are for owner-operated devices only.

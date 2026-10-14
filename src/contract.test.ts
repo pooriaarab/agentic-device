@@ -1,71 +1,9 @@
 import { describe, expect, test } from "vitest";
-import type * as Contract from "../agentic-core.js";
-import {
-  createDryRunResult,
-  createGuards,
-  createLogger,
-  defineBrand,
-  dispatchText,
-  getCostReport,
-  GuardError,
-  HttpRouterAdapter,
-  LocalRouterAdapter,
-  recordCost,
-  resetCosts,
-  summarizeText,
-  VendorError,
-} from "./core.js";
-
-// Each binding below fails typecheck when src/core.ts drifts from the
-// frozen contract in agentic-core.d.ts. See docs/agentic-core.md.
-const _defineBrand: typeof Contract.defineBrand = defineBrand;
-const _createLogger: typeof Contract.createLogger = createLogger;
-const _GuardError: typeof Contract.GuardError = GuardError;
-const _VendorError: typeof Contract.VendorError = VendorError;
-const _createGuards: typeof Contract.createGuards = createGuards;
-const _LocalRouterAdapter: typeof Contract.LocalRouterAdapter = LocalRouterAdapter;
-const _HttpRouterAdapter: typeof Contract.HttpRouterAdapter = HttpRouterAdapter;
-const _recordCost: typeof Contract.recordCost = recordCost;
-const _getCostReport: typeof Contract.getCostReport = getCostReport;
-const _resetCosts: typeof Contract.resetCosts = resetCosts;
-const _createDryRunResult: typeof Contract.createDryRunResult = createDryRunResult;
-const _dispatchText: typeof Contract.dispatchText = dispatchText;
-const _summarizeText: typeof Contract.summarizeText = summarizeText;
-
-void [
-  _defineBrand,
-  _createLogger,
-  _GuardError,
-  _VendorError,
-  _createGuards,
-  _LocalRouterAdapter,
-  _HttpRouterAdapter,
-  _recordCost,
-  _getCostReport,
-  _resetCosts,
-  _createDryRunResult,
-  _dispatchText,
-  _summarizeText,
-];
-
-describe("frozen contract", () => {
-  test("every contracted export exists at runtime", () => {
-    for (const value of [
-      defineBrand,
-      createLogger,
-      GuardError,
-      VendorError,
-      createGuards,
-      LocalRouterAdapter,
-      HttpRouterAdapter,
-      recordCost,
-      getCostReport,
-      resetCosts,
-      createDryRunResult,
-      dispatchText,
-      summarizeText,
-    ]) {
-      expect(value).toBeDefined();
-    }
-  });
+import { DeviceRegistry, Esp32HidDriver, SimulatorDriver, WdaDriver, PostTaskQueue, runAction } from "./device.js";
+describe("device library", () => {
+ test("simulator records an executed action and dry run is default", async () => { const registry = new DeviceRegistry(); const device = registry.register({ udid: "u", label: "mine", connectionType: "simulator" }); const driver = new SimulatorDriver(); expect(await runAction(device, driver, { type: "tap", x: 1, y: 2 })).toMatchObject({ dryRun: true }); expect(driver.actions).toHaveLength(0); await runAction(device, driver, { type: "tap", x: 1, y: 2 }, { dryRun: false }); expect(driver.actions).toHaveLength(1); });
+ test("human checkpoint always needs a human", async () => { const result = await runAction({ udid: "u", label: "mine", connectionType: "simulator" }, new SimulatorDriver(), { type: "humanCheckpoint", reason: "CAPTCHA" }, { dryRun: false }); expect(result).toMatchObject({ needsHuman: true, dryRun: true }); });
+ test("queue has audit entries", () => { const queue = new PostTaskQueue(); const task = queue.createPostTask("u", "x", "hi"); expect(queue.claimTask(task.id).audit).toHaveLength(2); expect(queue.completeTask(task.id).status).toBe("completed"); });
+ test("ESP serial failures are VendorError", async () => { const driver = new Esp32HidDriver({ write: () => { throw new Error("no serial"); } }); await expect(driver.home()).rejects.toMatchObject({ code: "VENDOR_FAILED" }); });
+ test("WDA accepts injected fetch", async () => { const driver = new WdaDriver("http://wda", { fetchFn: async () => new Response("{}", { status: 200 }) }); await expect(driver.home()).resolves.toEqual({}); });
 });
