@@ -1,0 +1,15 @@
+# agentic-device
+
+Control your own iPhones for posting via WebDriverAgent and ESP32 HID.
+
+Keywords: iphone,esp32,webdriveragent,device,agentic-suite,cli,mcp.
+
+- SDK: import { summarizeText, dispatchText } from "agentic-device".
+- CLI: agentic-device summary --text "...".
+- MCP: run agentic-device mcp, then call summarize_text.
+
+## Docs
+
+- README: https://github.com/pooriaarab/agentic-device
+- Core contract: https://github.com/pooriaarab/agentic-device/blob/main/docs/agentic-core.md
+- License: MIT
