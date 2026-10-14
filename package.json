@@ -1,6 +1,6 @@
 {
   "name": "agentic-device",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Control your own iPhones for posting via WebDriverAgent and ESP32 HID.",
   "keywords": [
     "iphone",
